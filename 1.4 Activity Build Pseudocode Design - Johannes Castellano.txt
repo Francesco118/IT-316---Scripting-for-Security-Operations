@@ -1,0 +1,92 @@
+Johannes Castellano
+IT 316 Section 01
+
+-=-=-=-=-=--=-=-=-=-
+
+// C2 Server Pseudocode
+BEGIN C2_Server
+
+    // Initialize server with IP and Port
+    SET server_IP = "192.168.1.100" //where is the server
+    SET server_port = 8080 //which entrance to use
+    INITIALIZE secure_socket(server_IP, server_port) //actually establish the connection using the methods designed in the function
+
+    // Listen for incoming client connections
+    WHILE true DO
+        ACCEPT new_client_connection
+        SPAWN new_thread(handle_client, new_client_connection)
+    END WHILE
+
+END C2_Server
+
+-=-=-=-=-=-=-=-=-=--==--==-=-=-=-=-==-==-==-=-=-=-=
+
+// Function to handle client connections
+FUNCTION handle_client(connection)
+    TRY
+        AUTHENTICATE client
+        WHILE connection is active DO
+            SEND "Awaiting Command" TO client
+            RECEIVE command FROM client
+            PROCESS command
+            SEND response TO client
+        END WHILE
+    CATCH connection_error
+        LOG "Client disconnected or error occurred"
+        CLOSE connection
+    END TRY
+END FUNCTION
+
+-=-=-=-=-=-=-=-=-=--==--==-=-=-=-=-==-==-==-=-=-=-=
+
+// C2 Client Pseudocode
+BEGIN C2_Client
+
+    // Define C2 server details
+    SET server_IP = "192.168.1.100"
+    SET server_port = 8080
+
+    // Connect to server
+    INITIALIZE secure_socket()
+    CONNECT to server_IP, server_port
+
+    // Authentication with the server
+    SEND authentication_request TO server
+    RECEIVE authentication_response FROM server
+
+    // Communication loop
+    WHILE connection is active DO
+        RECEIVE command FROM server
+        EXECUTE command
+        SEND output_result TO server
+    END WHILE
+
+    CLOSE connection
+
+END C2_Client
+
+-=-=-=-=-=-=-=-=-=--==--==-=-=-=-=-==-==-==-=-=-=-=
+
+// Secure Communication (SSL/TLS)
+FUNCTION secure_socket(IP, port)
+    INITIALIZE socket(IP, port)
+    APPLY SSL/TLS encryption
+    RETURN secured_socket
+END FUNCTION
+
+-=-=-=-=-=-=-=-=-=--==--==-=-=-=-=-==-==-==-=-=-=-=
+
+// Command Processing Function - example
+FUNCTION process_command(command)
+    SWITCH command
+        CASE "ping":
+            RETURN "pong"
+        CASE "list_files":
+            RETURN LIST directory contents
+        CASE "execute":
+            RUN given executable
+            RETURN execution result
+        DEFAULT:
+            RETURN "Invalid command"
+    END SWITCH
+END FUNCTION
