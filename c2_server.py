@@ -51,6 +51,14 @@ async def issue_command(request):
     commands[client_id] = command
     return web.json_response({"message": f"Command '{command}' sent to {client_id}"})
 
+async def index(request):
+    return web.Response(text="C2 Server Running", content_type="text/html")
+
+app = web.Application()
+app.router.add_get("/", index)  # Add this route
+
+web.run_app(app, host="localhost", port=8080)
+
 app = web.Application()
 app.add_routes([
     web.post("/register", register_client),
@@ -60,4 +68,4 @@ app.add_routes([
 ])
 
 if __name__ == "__main__":
-    web.run_app(app, host="127.0.0.1", port=8080)
+    web.run_app(app, host="localhost", port=8080)
