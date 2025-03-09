@@ -8,7 +8,7 @@ import time
 clients = {}
 commands = {}
 
-async def register_client(request):
+async def register_client(request): #client is registered and now is recognized by the server
     """Registers a new client."""
     data = await request.json()
     client_id = data.get("client_id")
@@ -21,11 +21,11 @@ async def register_client(request):
     clients[client_id] = {"last_seen": time.time()}  # Update last seen time
     return web.json_response({"message": "Client registered", "client_id": client_id})
 
-async def get_command(request):
+async def get_command(request): #client is "authenticated" and sends commands to server (not working yet)
     """Sends a command to a client."""
     client_id = request.match_info.get("client_id")
     
-    if client_id not in clients:
+    if client_id not in clients: #if connection attempt comes from client that is not registered
         return web.json_response({"error": "Client not found"}, status=404)
 
     if client_id not in commands:
