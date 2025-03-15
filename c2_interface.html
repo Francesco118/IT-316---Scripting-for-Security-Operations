@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C2 Server Interface</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        .section {
+            margin-bottom: 25px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+        h2 {
+            margin-top: 0;
+            color: #444;
+            font-size: 1.2em;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .response {
+            margin-top: 10px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: white;
+            min-height: 100px;
+        }
+        .response pre {
+            margin: 0;
+            white-space: pre-wrap;
+        }
+        .client-list {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>C2 Server Interface</h1>
+        
+        <div class="section">
+            <h2>Register Client</h2>
+            <label for="register-client-id">Client ID:</label>
+            <input type="text" id="register-client-id" placeholder="Enter client ID">
+            <button id="register-btn">Register Client</button>
+            <div class="response">
+                <pre id="register-response"></pre>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>Issue Command</h2>
+            <label for="issue-client-id">Client ID:</label>
+            <input type="text" id="issue-client-id" placeholder="Enter client ID">
+            <label for="command">Command:</label>
+            <input type="text" id="command" placeholder="Enter command">
+            <button id="issue-btn">Issue Command</button>
+            <div class="response">
+                <pre id="issue-response"></pre>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>Get Command</h2>
+            <label for="get-client-id">Client ID:</label>
+            <input type="text" id="get-client-id" placeholder="Enter client ID">
+            <button id="get-btn">Get Command</button>
+            <div class="response">
+                <pre id="get-response"></pre>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>Post Result</h2>
+            <label for="result-client-id">Client ID:</label>
+            <input type="text" id="result-client-id" placeholder="Enter client ID">
+            <label for="result">Result:</label>
+            <textarea id="result" rows="4" placeholder="Enter result"></textarea>
+            <button id="result-btn">Post Result</button>
+            <div class="response">
+                <pre id="result-response"></pre>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>Upload File</h2>
+            <label for="upload-client-id">Client ID:</label>
+            <input type="text" id="upload-client-id" placeholder="Enter client ID">
+            <label for="file-path">File Path:</label>
+            <input type="text" id="file-path" placeholder="Enter file path">
+            <button id="upload-btn">Upload File</button>
+            <div class="response">
+                <pre id="upload-response"></pre>
+            </div>
+        </div>
+        
+        <div class="client-list">
+            <h2>Registered Clients</h2>
+            <ul id="clients-list"></ul>
+        </div>
+    </div>
+
+    <script>
+        // Store registered clients
+        const registeredClients = new Set();
+        
+        // Helper function to format JSON responses
+        function formatResponse(data) {
+            return JSON.stringify(data, null, 2);
+        }
+        
+        // Register Client
+        document.getElementById('register-btn').addEventListener('click', async () => {
+            const clientId = document.getElementById('register-client-id').value;
+            if (!clientId) {
+                alert('Please enter a client ID');
+                return;
+            }
+            
+            try {
+                const response = await fetch('http://localhost:8080/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ client_id: clientId })
+                });
+                
+                const data = await response.json();
+                document.getElementById('register-response').textContent = formatResponse(data);
+                
+                if (response.ok) {
+                    registeredClients.add(clientId);
+                    updateClientsList();
+                }
+            } catch (error) {
+                document.getElementById('register-response').textContent = 'Error: ' + error.message;
+            }
+        });
+        
+        // Issue Command
+        document.getElementById('issue-btn').addEventListener('click', async () => {
+            const clientId = document.getElementById('issue-client-id').value;
+            const command = document.getElementById('command').value;
+            
+            if (!clientId || !command) {
+                alert('Please enter both client ID and command');
+                return;
+            }
+            
+            try {
+                const response = await fetch('http://localhost:8080/issue_command', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ client_id: clientId, command: command })
+                });
+                
+                const data = await response.json();
+                document.getElementById('issue-response').textContent = formatResponse(data);
+            } catch (error) {
+                document.getElementById('issue-response').textContent = 'Error: ' + error.message;
+            }
+        });
+        
+        // Get Command
+        document.getElementById('get-btn').addEventListener('click', async () => {
+            const clientId = document.getElementById('get-client-id').value;
+            
+            if (!clientId) {
+                alert('Please enter a client ID');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`http://localhost:8080/command/${clientId}`, {
+                    method: 'GET'
+                });
+                
+                const data = await response.json();
+                document.getElementById('get-response').textContent = formatResponse(data);
+            } catch (error) {
+                document.getElementById('get-response').textContent = 'Error: ' + error.message;
+            }
+        });
+        
+        // Post Result
+        document.getElementById('result-btn').addEventListener('click', async () => {
+            const clientId = document.getElementById('result-client-id').value;
+            const result = document.getElementById('result').value;
+            
+            if (!clientId || !result) {
+                alert('Please enter both client ID and result');
+                return;
+            }
+            
+            try {
+                const response = await fetch('http://localhost:8080/result', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ client_id: clientId, result: result })
+                });
+                
+                const data = await response.json();
+                document.getElementById('result-response').textContent = formatResponse(data);
+            } catch (error) {
+                document.getElementById('result-response').textContent = 'Error: ' + error.message;
+            }
+        });
+        
+        // Upload File
+        document.getElementById('upload-btn').addEventListener('click', async () => {
+            const clientId = document.getElementById('upload-client-id').value;
+            const filePath = document.getElementById('file-path').value;
+            
+            if (!clientId || !filePath) {
+                alert('Please enter both client ID and file path');
+                return;
+            }
+            
+            try {
+                const response = await fetch('http://localhost:8080/upload_file', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ client_id: clientId, file_path: filePath })
+                });
+                
+                const data = await response.json();
+                document.getElementById('upload-response').textContent = formatResponse(data);
+            } catch (error) {
+                document.getElementById('upload-response').textContent = 'Error: ' + error.message;
+            }
+        });
+        
+        function updateClientsList() {
+            const list = document.getElementById('clients-list');
+            list.innerHTML = '';
+            
+            registeredClients.forEach(clientId => {
+                const li = document.createElement('li');
+                li.textContent = clientId;
+                list.appendChild(li);
+            });
+            
+            if (registeredClients.size === 0) {
+                const li = document.createElement('li');
+                li.textContent = 'No clients registered yet';
+                list.appendChild(li);
+            }
+        }
+        
+        // Initialize client list
+        updateClientsList();
+    </script>
+</body>
+</html>

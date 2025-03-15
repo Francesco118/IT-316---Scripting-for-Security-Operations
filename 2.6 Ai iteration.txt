@@ -1,0 +1,20 @@
+GitHub Copilot
+A mensagem de erro aiohttp.client_exceptions.ContentTypeError: 404, message='Attempt to decode JSON with unexpected mimetype: text/plain; charset=utf-8' indica que o cliente está tentando decodificar uma resposta JSON, mas o servidor está retornando um conteúdo com o tipo MIME text/plain em vez de application/json.
+
+O código de status 404 indica que o recurso solicitado não foi encontrado. Isso pode ocorrer se o endpoint /command/{client_id} não estiver configurado corretamente no servidor ou se o client_id não estiver registrado.
+
+Possíveis Soluções
+Verifique o Endpoint no Servidor: Certifique-se de que o endpoint /command/{client_id} está configurado corretamente no servidor e que ele retorna uma resposta JSON.
+
+Verifique o Registro do Cliente: Certifique-se de que o cliente está registrado corretamente no servidor antes de tentar obter comandos. O client_id deve estar presente no servidor.
+
+Tratamento de Erros no Cliente: Adicione tratamento de erros no cliente para lidar com respostas inesperadas do servidor.
+
+Modificação do Código do Cliente para Tratamento de Erros
+Vamos adicionar tratamento de erros no cliente para lidar com respostas inesperadas do servidor:
+
+Verificação do Servidor
+Certifique-se de que o servidor está retornando uma resposta JSON no endpoint /command/{client_id}. Aqui está um exemplo de como o servidor deve responder:
+
+Certifique-se de que o servidor está retornando uma resposta JSON com o tipo MIME application/json.
+
